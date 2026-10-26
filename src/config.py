@@ -57,3 +57,4 @@ GEMINI_API_KEY_ENV = "GEMINI_API_KEY"
 # Kaggle Dataset Reference
 KAGGLE_DATASET_SLUG = "aframannan/deepfake-detection"
 KAGGLE_DATASET_URL = "https://www.kaggle.com/datasets/aframannan/deepfake-detection"
+

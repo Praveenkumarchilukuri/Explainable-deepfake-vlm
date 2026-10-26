@@ -141,3 +141,4 @@ class ViTGradCAMExplainer:
             return "Oral region (Mouth / Upper lip dynamics)"
         else:
             return "Mandibular line (Jawline / Chin blending boundary)"
+

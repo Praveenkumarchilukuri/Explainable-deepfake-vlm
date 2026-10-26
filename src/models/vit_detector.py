@@ -121,3 +121,4 @@ def load_vit_model(
     model = ViTDeepfakeClassifier(pretrained=pretrained)
     model.to(device)
     return model
+

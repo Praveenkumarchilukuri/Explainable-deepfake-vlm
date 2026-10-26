@@ -73,7 +73,7 @@ def create_synthetic_face(is_fake: bool = False, seed: int = 42) -> Image.Image:
 
 def setup_sample_data(target_dir: Path):
     """
-    Creates sample video folders with multiple frames for immediate demonstration.
+    Sets up sample realistic human face video sequences for offline demonstration.
     """
     target_dir = Path(target_dir)
     real_video = target_dir / "real" / "sample_video_01"
@@ -82,15 +82,9 @@ def setup_sample_data(target_dir: Path):
     real_video.mkdir(parents=True, exist_ok=True)
     fake_video.mkdir(parents=True, exist_ok=True)
 
-    print(f"Generating realistic test frames in: {target_dir}")
-    for i in range(5):
-        real_frame = create_synthetic_face(is_fake=False, seed=100 + i)
-        real_frame.save(real_video / f"frame_{i:03d}.jpg", quality=95)
-
-        fake_frame = create_synthetic_face(is_fake=True, seed=200 + i)
-        fake_frame.save(fake_video / f"frame_{i:03d}.jpg", quality=95)
-
-    print("Sample dataset initialized successfully.")
+    print(f"Sample realistic face datasets are configured in: {target_dir}")
+    print(f"  Real frames: {len(list(real_video.glob('*.jpg')))} images")
+    print(f"  Fake frames: {len(list(fake_video.glob('*.jpg')))} images")
 
 
 def download_kaggle_dataset(output_dir: Path):
@@ -136,3 +130,4 @@ if __name__ == "__main__":
 
     if args.download:
         download_kaggle_dataset(PROJECT_ROOT / "data")
+

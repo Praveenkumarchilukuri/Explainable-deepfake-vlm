@@ -101,3 +101,4 @@ class CLIPForensicAnalyzer:
             results[prompt] = round(float(score), 4)
 
         return results
+

@@ -134,3 +134,4 @@ FORMAT:
                 f"- **Multimodal Semantic Alignment**: Closest semantic prompt match was *\"{top_clip[0]}\"* with similarity {top_clip[1]:.4f}.\n"
                 f"- **Forensic Assessment**: Facial contours, skin micro-textures, and ocular reflections conform to natural camera acquisition characteristics."
             )
+
