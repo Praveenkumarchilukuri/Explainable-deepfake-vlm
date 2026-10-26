@@ -23,8 +23,8 @@ dist/
 .ipynb_checkpoints/
 
 # Raw dataset downloads and zip archives
-data/
-datasets/
+/data/
+/datasets/
 *.zip
 *.tar.gz
 *.h5

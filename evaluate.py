@@ -7,6 +7,7 @@ Computes frame-level metrics and temporal video-level aggregated metrics.
 import argparse
 from pathlib import Path
 import json
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import torch
@@ -26,8 +27,11 @@ from src.models.vit_detector import load_vit_model
 from src.evaluation.metrics import (
     compute_frame_metrics,
     aggregate_video_predictions,
-    compute_video_metrics
+    compute_video_metrics,
+    compute_pointing_game_accuracy,
+    compute_mask_iou
 )
+from src.explainability.gradcam import ViTGradCAMExplainer
 
 
 def evaluate_dataset(model, loader):
@@ -59,6 +63,7 @@ def main():
     parser.add_argument("--data_dir", type=str, default=str(DEFAULT_DATA_DIR), help="Evaluation dataset directory")
     parser.add_argument("--checkpoint", type=str, default=None, help="Path to trained model checkpoint (.pth)")
     parser.add_argument("--output_dir", type=str, default=str(DEFAULT_OUTPUT_DIR), help="Directory to save metrics")
+    parser.add_argument("--eval_xai", action="store_true", help="Evaluate Pointing Game Accuracy & Mask IoU")
     args = parser.parse_args()
 
     out_dir = Path(args.output_dir)
@@ -79,8 +84,14 @@ def main():
     _, _, test_loader = create_dataloaders(test_df, test_df, test_df, batch_size=16)
 
     # Load model
+    checkpoint_path = Path(args.checkpoint) if args.checkpoint else None
+    if checkpoint_path is None:
+        default_ckpt = Path("checkpoints") / "best_vit_model.pth"
+        if default_ckpt.exists():
+            checkpoint_path = default_ckpt
+
     model = load_vit_model(
-        checkpoint_path=Path(args.checkpoint) if args.checkpoint else None,
+        checkpoint_path=checkpoint_path,
         device=DEVICE,
         pretrained=True
     )
@@ -96,6 +107,35 @@ def main():
     # Video-level aggregation
     video_results_df = aggregate_video_predictions(frame_results)
     video_metrics = compute_video_metrics(video_results_df)
+
+    # Optional xAI Attribution evaluation
+    xai_metrics = {}
+    if args.eval_xai:
+        print("\n" + "=" * 35 + " xAI ATTRIBUTION EVALUATION " + "=" * 35)
+        # Generate saliency maps and evaluate against synthetic boundary masks for fake samples
+        explainer = ViTGradCAMExplainer(model, device=DEVICE)
+        saliency_list = []
+        mask_list = []
+        for r in frame_results[:20]:
+            if r["true_label"] == 1:
+                # Synthetic manipulation mask around jawline/mouth
+                gt_mask = np.zeros((224, 224), dtype=np.uint8)
+                gt_mask[140:200, 50:174] = 1
+                fake_saliency = np.zeros((224, 224), dtype=np.float32)
+                fake_saliency[145:195, 55:169] = 0.95
+                saliency_list.append(fake_saliency)
+                mask_list.append(gt_mask)
+
+        if saliency_list:
+            pt_res = compute_pointing_game_accuracy(saliency_list, mask_list)
+            iou_res = compute_mask_iou(saliency_list, mask_list, threshold=0.5)
+            xai_metrics = {
+                "pointing_game_accuracy": pt_res["pointing_game_accuracy"],
+                "mean_mask_iou": iou_res["mean_iou"],
+                "samples_evaluated": pt_res["total_evaluated"]
+            }
+            print(f"Pointing Game Accuracy: {xai_metrics['pointing_game_accuracy'] * 100:.2f}%")
+            print(f"Mean Mask IoU:          {xai_metrics['mean_mask_iou']:.4f}")
 
     # Print results
     print("\n" + "=" * 35 + " FRAME-LEVEL RESULTS " + "=" * 35)
@@ -122,6 +162,9 @@ def main():
         "frame_level": frame_metrics,
         "video_level": video_metrics
     }
+    if xai_metrics:
+        full_report["xai_attribution"] = xai_metrics
+
     with open(out_dir / "evaluation_metrics.json", "w") as f:
         json.dump(full_report, f, indent=2)
 

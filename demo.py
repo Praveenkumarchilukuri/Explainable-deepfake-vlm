@@ -23,6 +23,7 @@ from src.config import (
 from src.models.vit_detector import load_vit_model
 from src.models.clip_analyzer import CLIPForensicAnalyzer
 from src.explainability.gradcam import ViTGradCAMExplainer
+from src.explainability.attention_rollout import ViTAttentionRolloutExplainer
 from src.explainability.llm_explainer import GeminiForensicExplainer
 
 
@@ -49,27 +50,35 @@ def run_pipeline(
     print("\n[1/4] Running Vision Transformer (ViT-B/16) Inference...")
     vit_model = load_vit_model(checkpoint_path=checkpoint_path, device=DEVICE)
 
-    # Step 2: Grad-CAM Explainability
-    print("[2/4] Generating Grad-CAM Saliency Heatmap...")
+    # Step 2: Spatial xAI Explainability (Grad-CAM & Attention Rollout)
+    print("[2/5] Generating ViT Grad-CAM Saliency Heatmap...")
     cam_explainer = ViTGradCAMExplainer(vit_model, device=DEVICE)
     grayscale_cam, cam_overlay, cam_metadata = cam_explainer.explain(image)
 
     # Save Grad-CAM image
     cam_output_path = output_dir / "gradcam_explanation.png"
     Image.fromarray(cam_overlay).save(cam_output_path)
-    print(f"  -> Visual heatmap saved to: {cam_output_path}")
+    print(f"  -> Grad-CAM visual heatmap saved to: {cam_output_path}")
     print(f"  -> Peak anomaly region:   {cam_metadata['anatomical_region']}")
     print(f"  -> Peak coordinates:      x={cam_metadata['peak_coordinate']['x']}, y={cam_metadata['peak_coordinate']['y']}")
 
-    # Step 3: OpenCLIP Multimodal Alignment
-    print("\n[3/4] Computing Multimodal CLIP Prompt Similarities...")
+    print("\n[3/5] Computing Multi-Layer ViT Attention Rollout...")
+    rollout_explainer = ViTAttentionRolloutExplainer(vit_model, device=DEVICE)
+    grayscale_rollout, rollout_overlay, rollout_metadata = rollout_explainer.explain(image)
+    rollout_output_path = output_dir / "attention_rollout.png"
+    Image.fromarray(rollout_overlay).save(rollout_output_path)
+    print(f"  -> Attention Rollout heatmap saved to: {rollout_output_path}")
+    print(f"  -> Rollout peak region:   {rollout_metadata['anatomical_region']}")
+
+    # Step 4: OpenCLIP Multimodal Alignment
+    print("\n[4/5] Computing Multimodal CLIP Prompt Similarities...")
     clip_analyzer = CLIPForensicAnalyzer(device=DEVICE)
     clip_scores = clip_analyzer.analyze_image(image)
     for prompt, score in clip_scores.items():
         print(f"  - \"{prompt[:45]}...\": {score:.4f}")
 
-    # Step 4: Gemini LLM Forensic Report Generation
-    print("\n[4/4] Generating Auditable Forensic Report via Gemini / LLM Engine...")
+    # Step 5: Gemini LLM Forensic Report Generation
+    print("\n[5/5] Generating Auditable Forensic Report via Gemini / LLM Engine...")
     llm_explainer = GeminiForensicExplainer()
     report_dict = llm_explainer.generate_report(
         predicted_class=cam_metadata["predicted_class"],
@@ -113,9 +122,15 @@ def main():
     else:
         target_image = Path(args.image)
 
+    checkpoint_path = Path(args.checkpoint) if args.checkpoint else None
+    if checkpoint_path is None:
+        default_ckpt = Path("checkpoints") / "best_vit_model.pth"
+        if default_ckpt.exists():
+            checkpoint_path = default_ckpt
+
     run_pipeline(
         image_path=target_image,
-        checkpoint_path=Path(args.checkpoint) if args.checkpoint else None,
+        checkpoint_path=checkpoint_path,
         output_dir=Path(args.output_dir)
     )
 
