@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch checkpoints and large model weights
+*.pth
+*.pt
+*.bin
+*.onnx
+*.engine
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Raw dataset downloads and zip archives
+data/
+datasets/
+*.zip
+*.tar.gz
+*.h5
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+
+# Artifacts & temp output
+outputs/
+project2_artifacts/
+runs/

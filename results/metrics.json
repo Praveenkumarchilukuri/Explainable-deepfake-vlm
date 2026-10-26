@@ -1,0 +1,98 @@
+{
+  "status": "Transcribed from saved notebook outputs; not independently rerun during packaging.",
+  "dataset": {
+    "real_video_folders": 98,
+    "fake_video_folders": 98,
+    "real_images": 1470,
+    "fake_images": 1470,
+    "total_images": 2940,
+    "split": {
+      "train_videos": 68,
+      "validation_videos": 15,
+      "test_videos": 15,
+      "train_frames": 2040,
+      "validation_frames": 450,
+      "test_frames": 450,
+      "test_distribution": {
+        "real": 8,
+        "fake": 7
+      }
+    }
+  },
+  "model": {
+    "architecture": "timm vit_base_patch16_224",
+    "pretrained": true,
+    "epochs": 3,
+    "learning_rate": 2e-05,
+    "batch_size": 16,
+    "device": "NVIDIA Tesla T4"
+  },
+  "frame_level": {
+    "accuracy": 0.9289,
+    "precision": 0.8739,
+    "recall": 0.9905,
+    "f1": 0.9286,
+    "roc_auc": 0.9982,
+    "support": {
+      "real": 240,
+      "fake": 210,
+      "total": 450
+    }
+  },
+  "video_level": {
+    "videos_evaluated": 15,
+    "accuracy": 0.9333,
+    "precision": 0.875,
+    "recall": 1.0,
+    "f1": 0.9333,
+    "roc_auc": 1.0,
+    "confusion_matrix_labels": [
+      "real",
+      "fake"
+    ],
+    "confusion_matrix": [
+      [
+        7,
+        1
+      ],
+      [
+        0,
+        7
+      ]
+    ],
+    "support": {
+      "real": 8,
+      "fake": 7
+    }
+  },
+  "training_history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.226962,
+      "train_accuracy": 0.888235,
+      "val_loss": 0.948288,
+      "val_accuracy": 0.7
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.026584,
+      "train_accuracy": 0.986275,
+      "val_loss": 1.331415,
+      "val_accuracy": 0.708889
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.020257,
+      "train_accuracy": 0.990196,
+      "val_loss": 1.053794,
+      "val_accuracy": 0.748889
+    }
+  ],
+  "limitations": [
+    "Results are from saved notebook outputs, not independently reproduced during packaging.",
+    "Video-level test set contains only 15 videos, so estimates are highly uncertain.",
+    "Training accuracy reached 99.02% while validation accuracy reached 74.89%; validation loss rose after epoch 1, suggesting possible overfitting.",
+    "Notebook logs DataLoader multiprocessing cleanup warnings.",
+    "Dataset and trained model weights are not included in this package."
+  ]
+}
