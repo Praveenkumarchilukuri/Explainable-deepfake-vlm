@@ -222,38 +222,6 @@ Explainable-deepfake-vlm/
 
 ---
 
-## Technical Interview Defense & FAQs
-
-<details>
-<summary><b>Q1: How do you extract Grad-CAM heatmaps from a Vision Transformer?</b></summary>
-Vision Transformers do not output 2D spatial feature maps; they output a 1D sequence of patch tokens $[B, N+1, C]$ where $N = (H/P) \times (W/P)$. We register backward hooks on the final normalization layer (`model.blocks[-1].norm1`). A custom `reshape_transform` discards the class token at index 0, reshapes the remaining tokens into a 2D spatial grid $[B, \sqrt{N}, \sqrt{N}, C]$, permutes to channels-first $[B, C, H', W']$, and bilinearly interpolates to the original image dimensions.
-</details>
-
-<details>
-<summary><b>Q2: How does Attention Rollout differ from Grad-CAM?</b></summary>
-While Grad-CAM computes gradients of a specific target class with respect to the final layer's features, Attention Rollout recursively tracks raw self-attention flow across all 12 transformer layers:
-$$A_{\text{rollout}} = \prod_{l=1}^{L} (0.5 A_l + 0.5 I)$$
-This accounts for residual shortcut connections and provides class-agnostic insight into how information propagates from the <code>[CLS]</code> token to every individual patch.
-</details>
-
-<details>
-<summary><b>Q3: What are Pointing Game Accuracy and Mask IoU?</b></summary>
-To objectively measure explainability rather than relying on subjective human observation:
-1. <b>Pointing Game Accuracy (91.4%)</b>: Evaluates whether the single maximum peak coordinate of the saliency map falls inside the ground-truth binary manipulation mask.
-2. <b>Mask IoU (0.741)</b>: Measures the spatial Intersection-over-Union between the thresholded saliency heatmap and the ground-truth manipulation mask.
-</details>
-
-<details>
-<summary><b>Q4: Since the input is only an image, where does the text for CLIP come from?</b></summary>
-The image contains no embedded text. The text embeddings are derived from a bank of <b>predefined forensic hypotheses</b> (e.g., <i>"A face with unnatural blending boundary and warping artifacts"</i> vs. <i>"A genuine, unaltered video frame of a person"</i>). CLIP's text encoder projects these prompts into the same joint embedding space as the face image. Cosine similarity then serves as a semantic cross-check alongside the supervised ViT classifier.
-</details>
-
-<details>
-<summary><b>Q5: How do you prevent the LLM from hallucinating in forensic reports?</b></summary>
-The LLM never performs classification. Detection is handled entirely by the fine-tuned ViT classifier. The LLM acts solely as a deterministic translation parser constrained by a low temperature ($T = 0.1$) and a rigid intermediate JSON schema containing the classification score, Grad-CAM coordinates, and top CLIP matches. If an artifact is absent from the JSON payload, it cannot be generated in the report.
-</details>
-
----
 
 ## License
 
